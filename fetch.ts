@@ -3,7 +3,7 @@ import { account } from "./viem";
 
 const fetchWithPayment = wrapFetchWithPayment(fetch, account);
 
-const url = "http://localhost:8787/private/pin"
+const url = "http://localhost:8787/pin/private"
 
 fetchWithPayment(url, { //url should be something like https://api.example.com/paid-endpoint
   method: "POST",
@@ -13,6 +13,10 @@ fetchWithPayment(url, { //url should be something like https://api.example.com/p
   })
 })
   .then(async response => {
+    if (!response.ok) {
+      const message = await response.text()
+      console.log(message)
+    }
     const body = await response.json() as { url: string }
     console.log(body);
 
