@@ -1,0 +1,20 @@
+{
+  "name": "402-server",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "@coinbase/x402": "^0.3.3",
+    "hono": "^4.7.8",
+    "pinata": "^2.2.2",
+    "viem": "^2.29.1",
+    "x402-fetch": "^0.3.2",
+    "x402-hono": "^0.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.16",
+    "wrangler": "^4.4.0"
+  }
+}
