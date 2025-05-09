@@ -4,10 +4,7 @@ import { PaymentPayload } from 'x402/types';
 import { PinataSDK } from 'pinata';
 import { Network } from 'inspector/promises';
 import { cors } from "hono/cors"
-
-type Bindings = {
-  PINATA_JWT: string;
-}
+import { Bindings } from '../utils/types';
 
 type Network =  "public" | "private"
 
