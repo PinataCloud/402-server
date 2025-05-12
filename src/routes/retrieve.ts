@@ -20,7 +20,7 @@ app.get("/private/:cid", async (c) => {
       ? (JSON.parse(atob(header)) as PaymentPayload)
       : null;
 
-    console.log(headerParsed);
+    console.log({headerParsed});
 
     if (!cid) {
       return c.json({ message: "CID is required" }, 400);
@@ -32,14 +32,17 @@ app.get("/private/:cid", async (c) => {
       pinataGatewayKey: c.env.PINATA_GATEWAY_KEY,
     });
 
+    console.log({pinata})
+
     //  Make sure the requestor is allowed to access
     console.log("Checking for access");
     const files = await pinata.files.private
       .list()
       .keyvalues({ account: headerParsed?.payload.authorization.from || "" });
+    
     console.log({files});
     if (!files.files || !files.files.find((f) => f.cid === cid)) {
-      return c.json({ message: "Unathorized" }, 401);
+      return c.json({ message: "Unauthorized" }, 401);
     }
 
     const url = await pinata.gateways.private.createAccessLink({
