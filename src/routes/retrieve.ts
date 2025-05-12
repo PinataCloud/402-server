@@ -20,6 +20,8 @@ app.get("/private/:cid", async (c) => {
       ? (JSON.parse(atob(header)) as PaymentPayload)
       : null;
 
+    console.log(headerParsed);
+
     if (!cid) {
       return c.json({ message: "CID is required" }, 400);
     }
