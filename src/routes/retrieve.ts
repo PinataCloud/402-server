@@ -33,10 +33,11 @@ app.get("/private/:cid", async (c) => {
     });
 
     //  Make sure the requestor is allowed to access
+    console.log("Checking for access");
     const files = await pinata.files.private
       .list()
       .keyvalues({ account: headerParsed?.payload.authorization.from || "" });
-
+    console.log({files});
     if (!files.files || !files.files.find((f) => f.cid === cid)) {
       return c.json({ message: "Unathorized" }, 401);
     }
