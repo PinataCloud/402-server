@@ -25,8 +25,8 @@ app.get("/private/:cid", async (c) => {
     if (!cid) {
       return c.json({ message: "CID is required" }, 400);
     }
-    console.log("ENVs")
-    console.log(c.env);
+
+    console.log({env: c.env});
     const pinata = new PinataSDK({
       pinataJwt: c.env.PINATA_JWT,
       pinataGateway: c.env.PINATA_GATEWAY_URL,
