@@ -25,9 +25,7 @@ const createDynamicPaymentMiddleware = (
 
       const fileSizeInGB = fileSize / (1024 * 1024 * 1024);
       const price = fileSizeInGB * PRICE_PER_GB * MONTHS;
-      console.log(price);
       const priceToUse = price >= 0.0001 ? price : 0.0001;
-      console.log({priceToUse})
       baseConfig = {
         "/pin/public": {
           price: `$${priceToUse.toFixed(4)}`,
