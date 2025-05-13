@@ -22,10 +22,8 @@ const createDynamicPaymentMiddleware = (
   facilitatorConfig: any
 ) => {
   return async (c: Context, next: Next) => {
-    console.log("Checking for faciliator ",  facilitatorConfig);  
     if(!facilitatorConfig) {
-      console.log("No facilitator found, creating...")
-      console.log({ apiKey: c.env.CDP_API_KEY_ID, apiSecret: c.env.CDP_API_KEY_SECRET })
+      //  Custom config for mainnet to ensure we can get envs from context
       facilitatorConfig = createFacilitatorConfig(c.env.CDP_API_KEY_ID, c.env.CDP_API_KEY_SECRET)      
       console.log({facilitatorConfig})
     }
@@ -77,7 +75,7 @@ app.use(
   createDynamicPaymentMiddleware(
     "0xaD73eafCAc4F4c6755DFc61770875fb8B6bC8A25",
     {},
-    null
+    null // set this to facilitator from x402 library when using base sepolia
   )
 );
 

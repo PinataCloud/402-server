@@ -22,9 +22,7 @@ app.get("/private/:cid", async (c) => {
 
     if (!cid) {
       return c.json({ message: "CID is required" }, 400);
-    }
-
-    console.log({ envs: { jwt: c.env.PINATA_JWT, gateway: c.env.PINATA_GATEWAY_URL, gatewayKey: c.env.PINATA_GATEWAY_KEY } });
+    }    
 
     const pinata = new PinataSDK({
       pinataJwt: c.env.PINATA_JWT,
@@ -38,7 +36,6 @@ app.get("/private/:cid", async (c) => {
       .keyvalues({ account: headerParsed?.payload.authorization.from || "" });
 
     if (!files.files || !files.files.find((f) => f.cid === cid)) {
-      console.log("unauthorized")
       return c.json({ message: "Unauthorized" }, 401);
     }
 
@@ -46,8 +43,6 @@ app.get("/private/:cid", async (c) => {
       cid: cid,
       expires: 3000,
     });
-
-    console.log({ url });
 
     return c.json({ url: url });
   } catch (error) {
