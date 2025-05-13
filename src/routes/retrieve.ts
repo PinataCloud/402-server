@@ -47,6 +47,8 @@ app.get("/private/:cid", async (c) => {
       expires: 3000,
     });
 
+    console.log({ url });
+
     return c.json({ url: url });
   } catch (error) {
     console.log(error);
