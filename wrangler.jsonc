@@ -7,7 +7,8 @@
     "nodejs_compat"
   ],
   "vars": {
-    "CDP_API_KEY_ID": "adf29100-0765-40dd-85c1-ba0223d870e8"
+    "CDP_API_KEY_ID": "adf29100-0765-40dd-85c1-ba0223d870e8",
+    "PINATA_GATEWAY_URL": "pink-tremendous-badger-644.mypinata.cloud"
   },
   // "kv_namespaces": [
   //   {
