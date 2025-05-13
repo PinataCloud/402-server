@@ -25,6 +25,7 @@ app.get("/private/:cid", async (c) => {
     }
 
     console.log({env: c.env.PINATA_JWT});
+    
     const pinata = new PinataSDK({
       pinataJwt: c.env.PINATA_JWT,
       pinataGateway: c.env.PINATA_GATEWAY_URL,
