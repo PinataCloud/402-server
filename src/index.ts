@@ -4,6 +4,7 @@ import retrieve from "./routes/retrieve";
 import { cors } from "hono/cors";
 import { paymentMiddleware } from "x402-hono";
 import { createFacilitatorConfig } from "@coinbase/x402";
+import { html } from "./main";
 
 type Bindings = {
   PINATA_JWT: string;
@@ -80,7 +81,7 @@ app.use(
 );
 
 app.get("/", (c) => {
-  return c.text("Hello");
+  return c.html(html);
 });
 
 app.route("/pin", pin);
