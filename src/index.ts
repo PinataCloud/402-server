@@ -84,7 +84,7 @@ app.get("/", (c) => {
   return c.html(html);
 });
 
-app.route("/pin", pin);
-app.route("/retrieve", retrieve);
+app.route("/v1/pin", pin);
+app.route("/v1/retrieve", retrieve);
 
 export default app;
