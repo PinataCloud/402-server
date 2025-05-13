@@ -24,8 +24,8 @@ app.get("/private/:cid", async (c) => {
       return c.json({ message: "CID is required" }, 400);
     }
 
-    console.log({env: c.env.PINATA_JWT});
-    
+    console.log({ env: c.env.PINATA_JWT });
+
     const pinata = new PinataSDK({
       pinataJwt: c.env.PINATA_JWT,
       pinataGateway: c.env.PINATA_GATEWAY_URL,
@@ -36,8 +36,8 @@ app.get("/private/:cid", async (c) => {
     const files = await pinata.files.private
       .list()
       .keyvalues({ account: headerParsed?.payload.authorization.from || "" });
-    
-    console.log({files});
+
+    console.log({ files });
     if (!files.files || !files.files.find((f) => f.cid === cid)) {
       return c.json({ message: "Unauthorized" }, 401);
     }
@@ -49,17 +49,8 @@ app.get("/private/:cid", async (c) => {
 
     return c.json({ url: url });
   } catch (error) {
-    console.error("Error retrieving from IPFS:", error);
-
-    const isTimeout =
-      error instanceof Error && error.message === "Request timed out";
-    return c.json(
-      {
-        message: isTimeout ? "Request timed out" : "Server error",
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      isTimeout ? 504 : 500
-    );
+    console.log(error);
+    return c.json({ message: "Server error" }, 500);
   }
 });
 

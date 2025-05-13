@@ -22,12 +22,10 @@ const createDynamicPaymentMiddleware = (
   facilitatorConfig: any
 ) => {
   return async (c: Context, next: Next) => {
-    console.log("Checking for faciliator")
-    console.log(facilitatorConfig);
+    console.log("Checking for faciliator ",  facilitatorConfig);  
     if(!facilitatorConfig) {
       console.log("No facilitator found, creating...")
       facilitatorConfig = createFacilitatorConfig(c.env.CDP_API_KEY_ID, c.env.CDP_API_KEY_SECRET)      
-      console.log("facilitator: ")
       console.log({facilitatorConfig})
     }
     if (c.req.method === "POST") {
