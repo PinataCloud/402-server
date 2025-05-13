@@ -3,9 +3,11 @@ import pin from "./routes/pin";
 import retrieve from "./routes/retrieve";
 import { cors } from "hono/cors";
 import { paymentMiddleware } from "x402-hono";
+import { createFacilitatorConfig } from "@coinbase/x402";
 
 type Bindings = {
   PINATA_JWT: string;
+  PINATA_GATEWAY_URL: string;
 };
 
 const PRICE_PER_GB = 0.1;
@@ -20,6 +22,14 @@ const createDynamicPaymentMiddleware = (
   facilitatorConfig: any
 ) => {
   return async (c: Context, next: Next) => {
+    console.log("Checking for faciliator")
+    console.log(facilitatorConfig);
+    if(!facilitatorConfig) {
+      console.log("No facilitator found, creating...")
+      facilitatorConfig = createFacilitatorConfig(c.env.CDP_API_KEY_ID, c.env.CDP_API_KEY_SECRET)      
+      console.log("facilitator: ")
+      console.log({facilitatorConfig})
+    }
     if (c.req.method === "POST") {
       const { fileSize } = await c.req.json();
 
@@ -29,14 +39,14 @@ const createDynamicPaymentMiddleware = (
       baseConfig = {
         "/pin/public": {
           price: `$${priceToUse.toFixed(4)}`,
-          network: "base-sepolia",
+          network: "base",
           config: {
             description: "Pay2Pin",
           },
         },
         "/pin/private": {
           price: `$${priceToUse.toFixed(4)}`,
-          network: "base-sepolia",
+          network: "base",
           config: {
             description: "Pay2Pin",
           },
@@ -46,15 +56,13 @@ const createDynamicPaymentMiddleware = (
       baseConfig = {
         "/retrieve/private/*": {
           price: `$0.0001`,
-          network: "base-sepolia",
+          network: "base",
           config: {
             description: "Pay2Read",
           },
         },        
       }
     }
-
-    console.log(baseConfig);
 
     const dynamicPaymentMiddleware = paymentMiddleware(
       receivingWallet,
@@ -70,7 +78,7 @@ app.use(
   createDynamicPaymentMiddleware(
     "0xaD73eafCAc4F4c6755DFc61770875fb8B6bC8A25",
     {},
-    { url: "https://x402.org/facilitator" }
+    null
   )
 );
 
