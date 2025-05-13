@@ -25,6 +25,7 @@ const createDynamicPaymentMiddleware = (
     console.log("Checking for faciliator ",  facilitatorConfig);  
     if(!facilitatorConfig) {
       console.log("No facilitator found, creating...")
+      console.log({ apiKey: c.env.CDP_API_KEY_ID, apiSecret: c.env.CDP_API_KEY_SECRET })
       facilitatorConfig = createFacilitatorConfig(c.env.CDP_API_KEY_ID, c.env.CDP_API_KEY_SECRET)      
       console.log({facilitatorConfig})
     }
