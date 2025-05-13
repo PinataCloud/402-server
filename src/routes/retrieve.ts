@@ -24,7 +24,7 @@ app.get("/private/:cid", async (c) => {
       return c.json({ message: "CID is required" }, 400);
     }
 
-    console.log({ envs: { jwt: c.env.PINATA_JWT, gateway: c.env.PINATA_GATEWAY_URL, gatewayKey: c.env.PINATA_GATEWAY_KEY });
+    console.log({ envs: { jwt: c.env.PINATA_JWT, gateway: c.env.PINATA_GATEWAY_URL, gatewayKey: c.env.PINATA_GATEWAY_KEY } });
 
     const pinata = new PinataSDK({
       pinataJwt: c.env.PINATA_JWT,
