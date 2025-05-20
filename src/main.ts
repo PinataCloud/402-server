@@ -366,7 +366,7 @@ export const html = `<!DOCTYPE html>
       
       <div class="button-group">
         <a href="https://app.pinata.cloud" class="btn btn-primary">Want a Pinata account?</a>
-        <a href="https://docs.pinata.cloud/402" class="btn btn-outline">Full Docs</a>
+        <a href="https://docs.pinata.cloud/files/x402" class="btn btn-outline">Full Docs</a>
       </div>
       
       <div class="pinata-mascot">
@@ -381,7 +381,7 @@ export const html = `<!DOCTYPE html>
 (<span class="keyword">async</span> () => {
   <span class="keyword">try</span> {
     <span class="keyword">const</span> response = <span class="keyword">await</span> <span class="function">fetchWithPayment</span>(
-      <span class="string">\`https://402.pinata.cloud/pin/private\`</span>,
+      <span class="string">\`https://402.pinata.cloud/v1/pin/private\`</span>,
       {
         method: <span class="string">"POST"</span>,
         headers: {
