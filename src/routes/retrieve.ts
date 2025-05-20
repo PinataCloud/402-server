@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { PinataSDK } from "pinata";
 import { cors } from "hono/cors";
-import { Bindings } from "../utils/types";
-import { PaymentPayload } from "x402/types";
+import type { Bindings } from "../utils/types";
+import type { PaymentPayload } from "x402/types";
 
 const app = new Hono<{ Bindings: Bindings }>();
 app.use(cors());
@@ -22,7 +22,7 @@ app.get("/private/:cid", async (c) => {
 
     if (!cid) {
       return c.json({ message: "CID is required" }, 400);
-    }    
+    }
 
     const pinata = new PinataSDK({
       pinataJwt: c.env.PINATA_JWT,
