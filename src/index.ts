@@ -12,7 +12,7 @@ app.use(cors());
 
 app.use(
   createDynamicPaymentMiddleware(
-    "0xaD73eafCAc4F4c6755DFc61770875fb8B6bC8A25" as `0x`,
+    "0xc900f41481B4F7C612AF9Ce3B1d16A7A1B6bd96E" as `0x`,
     {},
     null // set this to facilitator from x402 library when using base sepolia
   )
