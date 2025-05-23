@@ -27,14 +27,14 @@ export const createDynamicPaymentMiddleware = (
       const price = fileSizeInGB * PRICE_PER_GB * MONTHS;
       const priceToUse = price >= 0.0001 ? price : 0.0001;
       baseConfig = {
-        "/pin/public": {
+        "/v1/pin/public": {
           price: `$${priceToUse.toFixed(4)}`,
           network: "base" as NetworkType,
           config: {
             description: "Pay2Pin",
           },
         },
-        "/pin/private": {
+        "/v1/pin/private": {
           price: `$${priceToUse.toFixed(4)}`,
           network: "base" as NetworkType,
           config: {
@@ -44,7 +44,7 @@ export const createDynamicPaymentMiddleware = (
       };
     } else {
       baseConfig = {
-        "/retrieve/private/*": {
+        "/v1/retrieve/private/*": {
           price: "$0.0001",
           network: "base" as NetworkType,
           config: {
