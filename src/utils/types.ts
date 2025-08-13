@@ -13,7 +13,15 @@ export interface RouteConfig {
   network: string;
   config: {
     description: string;
-    [key: string]: string;
+    inputSchema?: {
+      queryParams?: Record<string, any>;
+      bodyParams?: Record<string, any>;
+      pathParams?: Record<string, any>;
+    };
+    outputSchema?: {
+      type: string;
+      properties?: Record<string, any>;
+    };
   };
 }
 

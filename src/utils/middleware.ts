@@ -31,14 +31,50 @@ export const createDynamicPaymentMiddleware = (
           price: `$${priceToUse.toFixed(4)}`,
           network: "base" as NetworkType,
           config: {
-            description: "Pay2Pin",
+            description: "Pay to pin a public file to Pinata",
+            inputSchema: {
+              bodyParams: {
+                fileSize: {
+                  type: "number",
+                  description: "Size of the file to upload in bytes",
+                  required: true
+                }
+              }
+            },
+            outputSchema: {
+              type: "object",
+              properties: {
+                url: {
+                  type: "string",
+                  description: "Signed URL for uploading the file"
+                }
+              }
+            }
           },
         },
         "/v1/pin/private": {
           price: `$${priceToUse.toFixed(4)}`,
           network: "base" as NetworkType,
           config: {
-            description: "Pay2Pin",
+            description: "Pay to pin a private file to Pinata",
+            inputSchema: {
+              bodyParams: {
+                fileSize: {
+                  type: "number",
+                  description: "Size of the file to upload in bytes",
+                  required: true
+                }
+              }
+            },
+            outputSchema: {
+              type: "object",
+              properties: {
+                url: {
+                  type: "string",
+                  description: "Signed URL for uploading the file"
+                }
+              }
+            }
           },
         },
       };
@@ -48,7 +84,25 @@ export const createDynamicPaymentMiddleware = (
           price: "$0.0001",
           network: "base" as NetworkType,
           config: {
-            description: "Pay2Read",
+            description: "Pay to retrieve a private file from Pinata by CID",
+            inputSchema: {
+              pathParams: {
+                cid: {
+                  type: "string",
+                  description: "Content Identifier (CID) of the file to retrieve",
+                  required: true
+                }
+              }
+            },
+            outputSchema: {
+              type: "object",
+              properties: {
+                url: {
+                  type: "string",
+                  description: "Temporary access URL for the private file"
+                }
+              }
+            }
           },
         },
       }

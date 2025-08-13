@@ -6,16 +6,16 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
-    "@coinbase/x402": "^0.3.3",
-    "hono": "^4.7.8",
-    "pinata": "^2.2.2",
-    "viem": "^2.29.1",
-    "x402": "^0.3.2",
-    "x402-fetch": "^0.3.2",
-    "x402-hono": "^0.3.2"
+    "@coinbase/x402": "^0.4.2",
+    "hono": "^4.9.1",
+    "pinata": "^2.4.9",
+    "viem": "^2.33.3",
+    "x402": "^0.5.1",
+    "x402-fetch": "^0.5.1",
+    "x402-hono": "^0.4.1"
   },
   "devDependencies": {
-    "@types/node": "^22.15.16",
-    "wrangler": "^4.4.0"
+    "@types/node": "^24.2.1",
+    "wrangler": "^4.29.1"
   }
 }
