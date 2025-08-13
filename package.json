@@ -2,8 +2,11 @@
   "name": "402-server",
   "scripts": {
     "dev": "wrangler dev",
+    "dev:test": "wrangler dev --config wrangler.test.jsonc --local",
     "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@coinbase/x402": "^0.4.2",
@@ -16,6 +19,9 @@
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
+    "@vitest/ui": "^3.2.4",
+    "dotenv": "^17.2.1",
+    "vitest": "^3.2.4",
     "wrangler": "^4.29.1"
   }
 }

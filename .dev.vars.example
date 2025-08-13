@@ -1,0 +1,18 @@
+# Wrangler environment variables for local development and testing
+# These are automatically loaded by wrangler dev and test commands
+
+# CDP API credentials
+CDP_API_KEY_ID=
+CDP_API_KEY_SECRET=
+
+# Pinata credentials
+PINATA_JWT=
+PINATA_GATEWAY_URL=
+PINATA_GATEWAY_KEY=
+
+# Network configuration (base-sepolia for testing, base for production)
+NETWORK=base-sepolia
+
+# Test wallet configuration (only used by test suite)
+TEST_PRIVATE_KEY=
+TEST_RECEIVING_WALLET=0x0000000000000000000000000000000000000000

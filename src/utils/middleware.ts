@@ -9,13 +9,19 @@ const MONTHS = 12;
 export const createDynamicPaymentMiddleware = (
   receivingWallet: `0x`,
   initialBaseConfig: PaymentConfig,
-  initialFacilitatorConfig: FacilitatorConfig | null
+  initialFacilitatorConfig: FacilitatorConfig | null,
+  network: NetworkType = "base"
 ) => {
   return async (c: Context, next: Next) => {
     let baseConfig = { ...initialBaseConfig };
     let facilitatorConfig = initialFacilitatorConfig;
 
     if (!facilitatorConfig) {
+      // Validate required environment variables
+      if (!c.env.CDP_API_KEY_ID || !c.env.CDP_API_KEY_SECRET) {
+        throw new Error('CDP_API_KEY_ID and CDP_API_KEY_SECRET environment variables are required');
+      }
+      
       //  Custom config for mainnet to ensure we can get envs from context
       facilitatorConfig = createFacilitatorConfig(c.env.CDP_API_KEY_ID, c.env.CDP_API_KEY_SECRET)
       console.log({ facilitatorConfig })
@@ -29,7 +35,7 @@ export const createDynamicPaymentMiddleware = (
       baseConfig = {
         "/v1/pin/public": {
           price: `$${priceToUse.toFixed(4)}`,
-          network: "base" as NetworkType,
+          network: network,
           config: {
             description: "Pay to pin a public file to Pinata",
             inputSchema: {
@@ -54,7 +60,7 @@ export const createDynamicPaymentMiddleware = (
         },
         "/v1/pin/private": {
           price: `$${priceToUse.toFixed(4)}`,
-          network: "base" as NetworkType,
+          network: network,
           config: {
             description: "Pay to pin a private file to Pinata",
             inputSchema: {
@@ -82,7 +88,7 @@ export const createDynamicPaymentMiddleware = (
       baseConfig = {
         "/v1/retrieve/private/*": {
           price: "$0.0001",
-          network: "base" as NetworkType,
+          network: network,
           config: {
             description: "Pay to retrieve a private file from Pinata by CID",
             inputSchema: {
