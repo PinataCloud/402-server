@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "402-server-test",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    // Test environment uses base-sepolia network
+    "NETWORK": "base-sepolia",
+    "CDP_API_KEY_ID": "65d1fbaf-5c1d-498a-b961-a0c1f5aad850",
+    "PINATA_GATEWAY_URL": "x402-test.mypinata.cloud"
+  },
+  // Use .dev.vars file for sensitive keys in local development
+  // PINATA_JWT=your_pinata_jwt
+  // PINATA_GATEWAY_KEY=your_gateway_key
+  // CDP_API_KEY_SECRET=your_cdp_api_key_secret
+  "observability": {
+    "enabled": false,
+    "head_sampling_rate": 1
+  }
+}

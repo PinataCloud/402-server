@@ -10,7 +10,6 @@ dist/
 .idea/workspace.xml
 .idea/usage.statistics.xml
 .idea/shelf
-test/
 
 # deps
 node_modules/
@@ -19,6 +18,7 @@ node_modules/
 # env
 .env
 .env.production
+.env.test
 .dev.vars
 
 # logs
