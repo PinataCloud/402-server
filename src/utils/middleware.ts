@@ -37,6 +37,7 @@ export const createDynamicPaymentMiddleware = (
           price: `$${priceToUse.toFixed(4)}`,
           network: network,
           config: {
+            discoverable: true,
             description: "Pay to pin a public file to Pinata",
             inputSchema: {
               bodyParams: {
@@ -62,6 +63,7 @@ export const createDynamicPaymentMiddleware = (
           price: `$${priceToUse.toFixed(4)}`,
           network: network,
           config: {
+            discoverable: true,
             description: "Pay to pin a private file to Pinata",
             inputSchema: {
               bodyParams: {
@@ -90,6 +92,7 @@ export const createDynamicPaymentMiddleware = (
           price: "$0.0001",
           network: network,
           config: {
+            discoverable: true,
             description: "Pay to retrieve a private file from Pinata by CID",
             inputSchema: {
               pathParams: {

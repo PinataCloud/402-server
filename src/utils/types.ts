@@ -15,6 +15,7 @@ export interface RouteConfig {
   price: string;
   network: string;
   config: {
+    discoverable: boolean;
     description: string;
     inputSchema?: {
       queryParams?: Record<string, any>;
