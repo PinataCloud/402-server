@@ -60,11 +60,11 @@ describe('End-to-End File Upload Tests', () => {
 
   it('should upload pinnie.png to public Pinata and get CID', async () => {
     // Load the test image file
-    const imagePath = path.join(__dirname, 'pinnie.png');
+    const imagePath = path.join(__dirname, 'pinnie-elephant.png');
     const imageBuffer = readFileSync(imagePath);
-    const testFile = new File([imageBuffer], 'pinnie.png', { type: 'image/png' });
+    const testFile = new File([imageBuffer], 'pinnie-elephant.png', { type: 'image/png' });
     
-    console.log('Pinnie.png file size:', testFile.size, 'bytes');
+    console.log('Pinnie-elephant.png file size:', testFile.size, 'bytes');
 
     // Step 1: Get signed URL with payment
     const signedUrlResponse = await fetchWithPayment(`${TEST_API_URL}/v1/pin/public`, {
@@ -95,7 +95,7 @@ describe('End-to-End File Upload Tests', () => {
     // Should get back the CID and other file info (new Pinata API format)
     expect(uploadResult).toHaveProperty('data');
     expect(uploadResult.data).toHaveProperty('cid');
-    expect(uploadResult.data.cid).toMatch(/^bafkrei[a-z0-9]+$/); // IPFS CIDv1 format
+    expect(uploadResult.data.cid).toMatch(/^baf[a-z0-9]+$/); // IPFS CIDv1 format (bafkrei for files, bafybei for directories/DAGs)
     
     const cid = uploadResult.data.cid;
     console.log('File uploaded with CID:', cid);
