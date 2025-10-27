@@ -123,6 +123,16 @@ export const createDynamicPaymentMiddleware = (
       facilitatorConfig
     );
 
-    return dynamicPaymentMiddleware(c, next);
+    try {
+      return await dynamicPaymentMiddleware(c, next);
+    } catch (error) {
+      console.error('Payment middleware error:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        facilitatorUrl: facilitatorConfig?.url
+      });
+      throw error;
+    }
   };
 };

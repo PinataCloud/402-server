@@ -27,7 +27,6 @@ app.get("/private/:cid", async (c) => {
     const pinata = new PinataSDK({
       pinataJwt: c.env.PINATA_JWT,
       pinataGateway: c.env.PINATA_GATEWAY_URL,
-      pinataGatewayKey: c.env.PINATA_GATEWAY_KEY,
     });
 
     //  Make sure the requestor is allowed to access

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createWalletClient, http, type PrivateKeyAccount } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { wrapFetchWithPayment } from 'x402-fetch';
 import { readFileSync } from 'fs';
@@ -31,12 +31,12 @@ interface PrivateRetrieveResponse {
   url: string;
 }
 
-const TEST_API_URL = process.env.TEST_API_URL || 'http://localhost:8787';
+const TEST_API_URL = process.env.TEST_API_URL || 'https://402-server.pinata-marketing-enterprise.workers.dev';
 const TEST_PRIVATE_KEY = process.env.TEST_PRIVATE_KEY;
 const PINATA_GATEWAY_URL = process.env.PINATA_GATEWAY_URL;
 const PINATA_GATEWAY_KEY = process.env.PINATA_GATEWAY_KEY;
 
-describe('End-to-End File Upload Tests', () => {
+describe('End-to-End File Upload Tests (Base Mainnet)', () => {
   let account: PrivateKeyAccount;
   let walletClient: any;
   let fetchWithPayment: typeof fetch;
@@ -50,21 +50,21 @@ describe('End-to-End File Upload Tests', () => {
     
     walletClient = createWalletClient({
       account,
-      chain: baseSepolia,
-      transport: http()
+      chain: base,
+      transport: http('https://api.developer.coinbase.com/rpc/v1/base/GrG8M9dgsowQ9d5ZnJPzmaOHqPiIKhCJ')
     });
-    
+
     // Set max payment to 10 USDC for testing
     fetchWithPayment = wrapFetchWithPayment(fetch, walletClient, BigInt(10000000));
   });
 
-  it('should upload pinnie.png to public Pinata and get CID', async () => {
+  it('should upload pinata.png to public Pinata and get CID', async () => {
     // Load the test image file
-    const imagePath = path.join(__dirname, 'pinnie-elephant.png');
+    const imagePath = path.join(__dirname, 'pinata.png');
     const imageBuffer = readFileSync(imagePath);
-    const testFile = new File([imageBuffer], 'pinnie-elephant.png', { type: 'image/png' });
-    
-    console.log('Pinnie-elephant.png file size:', testFile.size, 'bytes');
+    const testFile = new File([imageBuffer], 'pinata.png', { type: 'image/png' });
+
+    console.log('pinata.png file size:', testFile.size, 'bytes');
 
     // Step 1: Get signed URL with payment
     const signedUrlResponse = await fetchWithPayment(`${TEST_API_URL}/v1/pin/public`, {
@@ -100,14 +100,10 @@ describe('End-to-End File Upload Tests', () => {
     const cid = uploadResult.data.cid;
     console.log('File uploaded with CID:', cid);
 
-    // Step 3: Verify file is accessible via Pinata gateway with access token
-    const gatewayUrl = `https://${PINATA_GATEWAY_URL}/ipfs/${cid}`;
-    const retrieveResponse = await fetch(gatewayUrl, {
-      headers: {
-        'x-pinata-gateway-token': PINATA_GATEWAY_KEY!
-      }
-    });
-    
+    // Step 3: Verify file is accessible via Pinata gateway
+    const gatewayUrl = `https://${PINATA_GATEWAY_URL}/ipfs/${cid}?pinataGatewayToken=${PINATA_GATEWAY_KEY}`;
+    const retrieveResponse = await fetch(gatewayUrl);
+
     expect(retrieveResponse.status).toBe(200);
     const retrievedBuffer = await retrieveResponse.arrayBuffer();
     expect(retrievedBuffer.byteLength).toBe(imageBuffer.length);
