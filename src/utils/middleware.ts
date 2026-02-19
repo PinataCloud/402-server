@@ -1,136 +1,170 @@
 import type { Context, Next } from "hono";
-import type { FacilitatorConfig, PaymentConfig, NetworkType } from "./types";
-import { paymentMiddleware } from "x402-hono";
+import { paymentMiddleware } from "@x402/hono";
+import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { createFacilitatorConfig } from "@coinbase/x402";
+import type { NetworkType, Bindings } from "./types";
 
 const PRICE_PER_GB = 0.1;
 const MONTHS = 12;
 
+// Cache facilitator clients and servers per network to avoid recreating on each request
+const facilitatorCache = new Map<string, { facilitatorClient: any; server: any }>();
+
+// Create facilitator client and server
+function createFacilitatorAndServer(
+  isMainnet: boolean,
+  network: string,
+  cdpApiKeyId?: string,
+  cdpApiKeySecret?: string
+) {
+  // Check cache first - include key ID in cache to handle credential changes
+  const cacheKey = `${isMainnet ? 'mainnet' : 'testnet'}:${network}:${cdpApiKeyId || 'none'}`;
+  if (facilitatorCache.has(cacheKey)) {
+    return facilitatorCache.get(cacheKey)!;
+  }
+
+  // Create facilitator client
+  // For mainnet, use CDP facilitator with explicit credentials from Workers env
+  // For testnet, use the public x402.org facilitator
+  const facilitatorClient = isMainnet
+    ? (() => {
+        console.log('Creating CDP facilitator with credentials:', {
+          hasKeyId: !!cdpApiKeyId,
+          hasKeySecret: !!cdpApiKeySecret,
+          keyIdPrefix: cdpApiKeyId?.substring(0, 8)
+        });
+        return new HTTPFacilitatorClient(createFacilitatorConfig(cdpApiKeyId, cdpApiKeySecret));
+      })()
+    : new HTTPFacilitatorClient({ url: "https://x402.org/facilitator" });
+
+  const server = new x402ResourceServer(facilitatorClient);
+
+  // Register EVM scheme for the specific network (as per CDP docs)
+  server.register(network, new ExactEvmScheme());
+
+  // Cache for reuse
+  const result = { facilitatorClient, server };
+  facilitatorCache.set(cacheKey, result);
+
+  return result;
+}
+
 export const createDynamicPaymentMiddleware = (
-  receivingWallet: `0x`,
-  initialBaseConfig: PaymentConfig,
-  initialFacilitatorConfig: FacilitatorConfig | null,
+  receivingWallet: `0x${string}`,
   network: NetworkType = "base"
 ) => {
-  return async (c: Context, next: Next) => {
-    let baseConfig = { ...initialBaseConfig };
-    let facilitatorConfig = initialFacilitatorConfig;
+  return async (c: Context<{ Bindings: Bindings }>, next: Next) => {
+    // Get fileSize from query parameter for dynamic pricing
+    const fileSizeParam = c.req.query('fileSize');
+    const fileSize = fileSizeParam ? parseInt(fileSizeParam, 10) : 1024;
 
-    if (!facilitatorConfig) {
-      // Validate required environment variables
-      if (!c.env.CDP_API_KEY_ID || !c.env.CDP_API_KEY_SECRET) {
-        throw new Error('CDP_API_KEY_ID and CDP_API_KEY_SECRET environment variables are required');
-      }
-      
-      //  Custom config for mainnet to ensure we can get envs from context
-      facilitatorConfig = createFacilitatorConfig(c.env.CDP_API_KEY_ID, c.env.CDP_API_KEY_SECRET)
-      console.log({ facilitatorConfig })
-    }
+    const fileSizeInGB = fileSize / (1024 * 1024 * 1024);
+    const price = fileSizeInGB * PRICE_PER_GB * MONTHS;
+    const priceToUse = price >= 0.0001 ? price : 0.0001;
+
+    // Map network to CAIP-2 format
+    const networkId = network === "base-sepolia"
+      ? "eip155:84532"  // Base Sepolia
+      : "eip155:8453";   // Base Mainnet
+
+    const isMainnet = network === "base";
+
+    // Create facilitator and server (cached per network)
+    // Mainnet uses CDP facilitator with explicit credentials from Workers env
+    // Testnet uses public x402.org facilitator
+    const { server } = createFacilitatorAndServer(
+      isMainnet,
+      networkId,
+      c.env.CDP_API_KEY_ID,
+      c.env.CDP_API_KEY_SECRET
+    );
+
+    console.log({
+      network: networkId,
+      facilitator: isMainnet ? "CDP (mainnet)" : "x402.org (testnet)",
+      price: `$${priceToUse.toFixed(4)}`
+    });
+
+    // Define route configurations using x402 v2 format
+    const routes: Record<string, any> = {};
+
     if (c.req.method === "POST") {
-      const { fileSize } = await c.req.json();
-
-      const fileSizeInGB = fileSize / (1024 * 1024 * 1024);
-      const price = fileSizeInGB * PRICE_PER_GB * MONTHS;
-      const priceToUse = price >= 0.0001 ? price : 0.0001;
-      baseConfig = {
-        "/v1/pin/public": {
-          price: `$${priceToUse.toFixed(4)}`,
-          network: network,
-          config: {
+      routes["/v1/pin/public"] = {
+        accepts: [
+          {
+            scheme: "exact",
+            price: `$${priceToUse.toFixed(4)}`,
+            network: networkId,
+            payTo: receivingWallet,
+          },
+        ],
+        description: "Pay to pin a public file to Pinata",
+        mimeType: "application/json",
+        extensions: {
+          bazaar: {
             discoverable: true,
-            description: "Pay to pin a public file to Pinata",
-            inputSchema: {
-              bodyParams: {
-                fileSize: {
-                  type: "number",
-                  description: "Size of the file to upload in bytes",
-                  required: true
-                }
-              }
-            },
-            outputSchema: {
-              type: "object",
-              properties: {
-                url: {
-                  type: "string",
-                  description: "Signed URL for uploading the file"
-                }
-              }
-            }
+            category: "storage",
+            tags: ["ipfs", "pinata", "public"],
           },
         },
-        "/v1/pin/private": {
-          price: `$${priceToUse.toFixed(4)}`,
-          network: network,
-          config: {
+      };
+
+      routes["/v1/pin/private"] = {
+        accepts: [
+          {
+            scheme: "exact",
+            price: `$${priceToUse.toFixed(4)}`,
+            network: networkId,
+            payTo: receivingWallet,
+          },
+        ],
+        description: "Pay to pin a private file to Pinata",
+        mimeType: "application/json",
+        extensions: {
+          bazaar: {
             discoverable: true,
-            description: "Pay to pin a private file to Pinata",
-            inputSchema: {
-              bodyParams: {
-                fileSize: {
-                  type: "number",
-                  description: "Size of the file to upload in bytes",
-                  required: true
-                }
-              }
-            },
-            outputSchema: {
-              type: "object",
-              properties: {
-                url: {
-                  type: "string",
-                  description: "Signed URL for uploading the file"
-                }
-              }
-            }
+            category: "storage",
+            tags: ["ipfs", "pinata", "private"],
           },
         },
       };
     } else {
-      baseConfig = {
-        "/v1/retrieve/private/*": {
-          price: "$0.0001",
-          network: network,
-          config: {
+      routes["/v1/retrieve/private/*"] = {
+        accepts: [
+          {
+            scheme: "exact",
+            price: "$0.0001",
+            network: networkId,
+            payTo: receivingWallet,
+          },
+        ],
+        description: "Pay to retrieve a private file from Pinata by CID",
+        mimeType: "application/json",
+        extensions: {
+          bazaar: {
             discoverable: true,
-            description: "Pay to retrieve a private file from Pinata by CID",
-            inputSchema: {
-              pathParams: {
-                cid: {
-                  type: "string",
-                  description: "Content Identifier (CID) of the file to retrieve",
-                  required: true
-                }
-              }
-            },
-            outputSchema: {
-              type: "object",
-              properties: {
-                url: {
-                  type: "string",
-                  description: "Temporary access URL for the private file"
-                }
-              }
-            }
+            category: "storage",
+            tags: ["ipfs", "pinata", "retrieve"],
           },
         },
-      }
+      };
     }
 
-    const dynamicPaymentMiddleware = paymentMiddleware(
-      receivingWallet,
-      baseConfig as any,
-      facilitatorConfig
-    );
+    // Apply x402 v2 payment middleware
+    const middleware = paymentMiddleware(routes, server);
 
     try {
-      return await dynamicPaymentMiddleware(c, next);
+      return await middleware(c, next);
     } catch (error) {
       console.error('Payment middleware error:', error);
       console.error('Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
-        facilitatorUrl: facilitatorConfig?.url
+        facilitator: isMainnet ? "CDP (mainnet)" : "x402.org (testnet)",
+        network: networkId,
+        errorType: error?.constructor?.name,
+        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
       });
       throw error;
     }

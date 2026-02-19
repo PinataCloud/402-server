@@ -11,19 +11,21 @@
     "test:mainnet": "TEST_API_URL=https://402-server.pinata-marketing-enterprise.workers.dev vitest test/e2e-upload-mainnet.test.ts"
   },
   "dependencies": {
-    "@coinbase/x402": "^0.4.2",
-    "hono": "^4.9.1",
-    "pinata": "^2.4.9",
-    "viem": "^2.33.3",
-    "x402": "^0.5.1",
-    "x402-fetch": "^0.5.1",
-    "x402-hono": "^0.4.1"
+    "@coinbase/cdp-sdk": "^1.44.1",
+    "@coinbase/x402": "^2.1.0",
+    "@x402/core": "^2.3.1",
+    "@x402/evm": "^2.3.1",
+    "@x402/fetch": "^2.3.0",
+    "@x402/hono": "^2.3.0",
+    "hono": "^4.11.10",
+    "pinata": "^2.5.5",
+    "viem": "^2.46.2"
   },
   "devDependencies": {
-    "@types/node": "^24.2.1",
-    "@vitest/ui": "^3.2.4",
-    "dotenv": "^17.2.1",
-    "vitest": "^3.2.4",
-    "wrangler": "^4.29.1"
+    "@types/node": "^25.3.0",
+    "@vitest/ui": "^4.0.18",
+    "dotenv": "^17.3.1",
+    "vitest": "^4.0.18",
+    "wrangler": "^4.66.0"
   }
 }

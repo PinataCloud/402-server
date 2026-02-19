@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createWalletClient, http, type PrivateKeyAccount } from 'viem';
-import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
-import { wrapFetchWithPayment } from 'x402-fetch';
-import { readFileSync } from 'fs';
-import path from 'path';
+import { wrapFetchWithPayment } from '@x402/fetch';
+import { x402Client } from '@x402/core/client';
+import { registerExactEvmScheme } from '@x402/evm/exact/client';
 
 interface SignedUrlResponse {
   url: string;
@@ -37,42 +35,37 @@ const PINATA_GATEWAY_URL = process.env.PINATA_GATEWAY_URL;
 const PINATA_GATEWAY_KEY = process.env.PINATA_GATEWAY_KEY;
 
 describe('End-to-End File Upload Tests (Base Mainnet)', () => {
-  let account: PrivateKeyAccount;
-  let walletClient: any;
   let fetchWithPayment: typeof fetch;
 
   beforeAll(() => {
     if (!TEST_PRIVATE_KEY) {
       throw new Error('TEST_PRIVATE_KEY environment variable is required');
     }
-    
-    account = privateKeyToAccount(TEST_PRIVATE_KEY as `0x${string}`);
-    
-    walletClient = createWalletClient({
-      account,
-      chain: base,
-      transport: http('https://api.developer.coinbase.com/rpc/v1/base/GrG8M9dgsowQ9d5ZnJPzmaOHqPiIKhCJ')
-    });
 
-    // Set max payment to 10 USDC for testing
-    fetchWithPayment = wrapFetchWithPayment(fetch, walletClient, BigInt(10000000));
+    // Create signer from private key
+    const signer = privateKeyToAccount(TEST_PRIVATE_KEY as `0x${string}`);
+
+    // Create x402 v2 client and register EVM scheme
+    const client = new x402Client();
+    registerExactEvmScheme(client, { signer });
+
+    // Wrap fetch with payment handling (v2 API)
+    fetchWithPayment = wrapFetchWithPayment(fetch, client);
   });
 
-  it('should upload pinata.png to public Pinata and get CID', async () => {
-    // Load the test image file
-    const imagePath = path.join(__dirname, 'pinata.png');
-    const imageBuffer = readFileSync(imagePath);
-    const testFile = new File([imageBuffer], 'pinata.png', { type: 'image/png' });
+  it('should upload timestamped file to public Pinata and get CID', async () => {
+    // Create a timestamped test file to ensure unique CID
+    const testContent = `Public test file uploaded at ${new Date().toISOString()} - ${Date.now()}`;
+    const testFile = new File([testContent], `public-test-${Date.now()}.txt`, { type: 'text/plain' });
 
-    console.log('pinata.png file size:', testFile.size, 'bytes');
+    console.log('Test file size:', testFile.size, 'bytes');
 
     // Step 1: Get signed URL with payment
-    const signedUrlResponse = await fetchWithPayment(`${TEST_API_URL}/v1/pin/public`, {
+    const signedUrlResponse = await fetchWithPayment(`${TEST_API_URL}/v1/pin/public?fileSize=${testFile.size}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ fileSize: testFile.size })
+      }
     });
 
     expect(signedUrlResponse.status).toBe(200);
@@ -91,12 +84,12 @@ describe('End-to-End File Upload Tests (Base Mainnet)', () => {
     expect(uploadResponse.status).toBe(200);
     const uploadResult = await uploadResponse.json() as PinataUploadResponse;
     console.log('Upload result:', uploadResult);
-    
+
     // Should get back the CID and other file info (new Pinata API format)
     expect(uploadResult).toHaveProperty('data');
     expect(uploadResult.data).toHaveProperty('cid');
     expect(uploadResult.data.cid).toMatch(/^baf[a-z0-9]+$/); // IPFS CIDv1 format (bafkrei for files, bafybei for directories/DAGs)
-    
+
     const cid = uploadResult.data.cid;
     console.log('File uploaded with CID:', cid);
 
@@ -105,9 +98,9 @@ describe('End-to-End File Upload Tests (Base Mainnet)', () => {
     const retrieveResponse = await fetch(gatewayUrl);
 
     expect(retrieveResponse.status).toBe(200);
-    const retrievedBuffer = await retrieveResponse.arrayBuffer();
-    expect(retrievedBuffer.byteLength).toBe(imageBuffer.length);
-    
+    const retrievedContent = await retrieveResponse.text();
+    expect(retrievedContent).toBe(testContent);
+
     console.log('✅ File successfully uploaded and retrieved from Pinata!');
     console.log('CID:', cid);
     console.log('Gateway URL:', gatewayUrl);
@@ -121,12 +114,11 @@ describe('End-to-End File Upload Tests (Base Mainnet)', () => {
     console.log('Private test file size:', testFile.size, 'bytes');
 
     // Step 1: Get signed URL for private upload with payment
-    const signedUrlResponse = await fetchWithPayment(`${TEST_API_URL}/v1/pin/private`, {
+    const signedUrlResponse = await fetchWithPayment(`${TEST_API_URL}/v1/pin/private?fileSize=${testFile.size}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ fileSize: testFile.size })
+      }
     });
 
     expect(signedUrlResponse.status).toBe(200);
@@ -180,22 +172,27 @@ describe('End-to-End File Upload Tests (Base Mainnet)', () => {
 
     for (const { size, label } of fileSizes) {
       // Get 402 response to see price
-      const response = await fetch(`${TEST_API_URL}/v1/pin/public`, {
+      const response = await fetch(`${TEST_API_URL}/v1/pin/public?fileSize=${size}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ fileSize: size })
+        }
       });
 
       expect(response.status).toBe(402);
-      const paymentInfo = await response.json() as PaymentRequiredResponse;
-      
+
+      // In x402 v2, payment info is in the PAYMENT-REQUIRED header (base64 encoded JSON)
+      const paymentHeader = response.headers.get('PAYMENT-REQUIRED');
+      expect(paymentHeader).toBeTruthy();
+
+      const paymentInfo = JSON.parse(atob(paymentHeader!)) as PaymentRequiredResponse;
+
       console.log(`${label} (${size} bytes):`, paymentInfo.accepts[0]);
-      
+
       // Verify the pricing logic: 0.1 per GB * 12 months, minimum 0.0001
       const expectedPrice = Math.max(0.0001, (size / (1024 * 1024 * 1024)) * 0.1 * 12);
       console.log(`Expected price: $${expectedPrice.toFixed(4)}`);
+      console.log(`Actual price: $${(parseInt(paymentInfo.accepts[0].amount) / 1000000).toFixed(4)}`);
     }
   });
 });
