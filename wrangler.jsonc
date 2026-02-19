@@ -20,5 +20,12 @@
         "NETWORK": "base",
       },
     },
+    "prod": {
+      "name": "402-server",
+      "account_id": "36817f924b5f72114fc8df14298f453a",
+      "vars": {
+        "NETWORK": "base",
+      },
+    },
   },
 }
