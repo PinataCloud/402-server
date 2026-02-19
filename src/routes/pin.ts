@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { PinataSDK } from "pinata";
-import type { Bindings } from "../utils/types";
+import { getPayerAddress, type Bindings } from "../utils/types";
 
 type Network = "public" | "private";
 
@@ -32,8 +32,7 @@ app.post("/:network", async (c) => {
     );
   }
 
-  // TODO: Extract payer address from x402 v2 payment context
-  const payerAddress = "";
+  const payerAddress = getPayerAddress(c) || "";
 
   const pinata = new PinataSDK({
     pinataJwt: c.env.PINATA_JWT,

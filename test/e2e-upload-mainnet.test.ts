@@ -236,8 +236,9 @@ describe("End-to-End File Upload Tests (Base Mainnet)", () => {
   ])(
     "should upload and retrieve $label file with correct payment",
     async ({ size, label }) => {
-      // Generate test content at the specified size
-      const content = "x".repeat(size);
+      // Generate unique test content at the specified size
+      const header = `Size test ${label} at ${Date.now()}\n`;
+      const content = header + "x".repeat(size - header.length);
       const testFile = new File(
         [content],
         `size-test-${label}-${Date.now()}.txt`,
