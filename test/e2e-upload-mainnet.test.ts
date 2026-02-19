@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { privateKeyToAccount } from 'viem/accounts';
+import { base } from 'viem/chains';
 import { wrapFetchWithPayment } from '@x402/fetch';
 import { x402Client } from '@x402/core/client';
 import { registerExactEvmScheme } from '@x402/evm/exact/client';
@@ -42,8 +43,12 @@ describe('End-to-End File Upload Tests (Base Mainnet)', () => {
       throw new Error('TEST_PRIVATE_KEY environment variable is required');
     }
 
-    // Create signer from private key
-    const signer = privateKeyToAccount(TEST_PRIVATE_KEY as `0x${string}`);
+    // Create signer from private key with Base chain configured
+    const account = privateKeyToAccount(TEST_PRIVATE_KEY as `0x${string}`);
+    // Assign the base chain to the account for proper EIP-712 domain parameters
+    const signer = Object.assign(account, { chain: base });
+    console.log('Test wallet address:', signer.address);
+    console.log('Test wallet chain:', signer.chain?.name, 'Chain ID:', signer.chain?.id);
 
     // Create x402 v2 client and register EVM scheme
     const client = new x402Client();
@@ -61,12 +66,57 @@ describe('End-to-End File Upload Tests (Base Mainnet)', () => {
     console.log('Test file size:', testFile.size, 'bytes');
 
     // Step 1: Get signed URL with payment
-    const signedUrlResponse = await fetchWithPayment(`${TEST_API_URL}/v1/pin/public?fileSize=${testFile.size}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+    console.log('Making payment request...');
+    let signedUrlResponse;
+    try {
+      signedUrlResponse = await fetchWithPayment(`${TEST_API_URL}/v1/pin/public?fileSize=${testFile.size}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error during fetchWithPayment:', error);
+      throw error;
+    }
+
+    console.log('Response status:', signedUrlResponse.status);
+    console.log('Response headers:', Object.fromEntries(signedUrlResponse.headers.entries()));
+
+    if (signedUrlResponse.status !== 200) {
+      const body = await signedUrlResponse.text();
+      console.log('Response body:', body);
+
+      // Decode payment-required header to see the exact error
+      const paymentRequired = signedUrlResponse.headers.get('payment-required');
+      if (paymentRequired) {
+        try {
+          const decoded = JSON.parse(Buffer.from(paymentRequired, 'base64').toString());
+          console.log('Payment challenge:',  JSON.stringify(decoded, null, 2));
+
+          // Check for specific rejection reasons
+          if (decoded.invalidReason) {
+            console.log('❌ Payment REJECTED by facilitator:', decoded.invalidReason);
+          }
+          if (decoded.errorReason) {
+            console.log('❌ Settlement ERROR from facilitator:', decoded.errorReason);
+          }
+        } catch (e) {
+          console.log('Could not decode payment-required header');
+        }
       }
-    });
+
+      // Also check payment-response header for settlement errors
+      const paymentResponse = signedUrlResponse.headers.get('payment-response');
+      if (paymentResponse) {
+        try {
+          const decoded = JSON.parse(Buffer.from(paymentResponse, 'base64').toString());
+          console.log('Payment response:', JSON.stringify(decoded, null, 2));
+        } catch (e) {
+          console.log('Could not decode payment-response header');
+        }
+      }
+    }
 
     expect(signedUrlResponse.status).toBe(200);
     const { url: signedUrl } = await signedUrlResponse.json() as SignedUrlResponse;

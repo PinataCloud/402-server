@@ -14,7 +14,6 @@ app.use(cors());
 app.use((c, next) => {
   const proto = c.req.header('x-forwarded-proto') || c.req.header('cf-visitor');
   if (proto) {
-    // Override the request URL protocol if forwarded
     const url = new URL(c.req.url);
     if (proto === 'https' || (typeof proto === 'string' && proto.includes('https'))) {
       url.protocol = 'https:';
@@ -28,9 +27,7 @@ app.use((c, next) => {
 });
 
 app.use((c, next) => {
-  // Get network from environment variable, fallback to "base" for production
   const network = (c.env.NETWORK || "base") as "base" | "base-sepolia";
-
   return createDynamicPaymentMiddleware(
     "0xc900f41481B4F7C612AF9Ce3B1d16A7A1B6bd96E",
     network
