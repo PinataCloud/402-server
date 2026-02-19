@@ -8,32 +8,18 @@ import type { NetworkType, Bindings } from "./types";
 const PRICE_PER_GB = 0.1;
 const MONTHS = 12;
 
-// Cache servers per environment (testnet vs mainnet with specific CDP keys)
-const serverCache = new Map<string, x402ResourceServer>();
-
-function getOrCreateServer(
+function createServer(
   isMainnet: boolean,
   cdpApiKeyId?: string,
   cdpApiKeySecret?: string,
 ): x402ResourceServer {
-  const cacheKey = isMainnet ? `mainnet:${cdpApiKeyId}` : "testnet";
-
-  if (serverCache.has(cacheKey)) {
-    return serverCache.get(cacheKey)!;
-  }
-
-  // Create facilitator client per x402 docs
   const facilitatorConfig = isMainnet
     ? createFacilitatorConfig(cdpApiKeyId, cdpApiKeySecret)
     : { url: "https://x402.org/facilitator" };
 
   const facilitatorClient = new HTTPFacilitatorClient(facilitatorConfig);
-
-  // Create server and register EVM scheme with wildcard (eip155:*)
   const server = new x402ResourceServer(facilitatorClient);
   registerExactEvmScheme(server);
-
-  serverCache.set(cacheKey, server);
   return server;
 }
 
@@ -55,7 +41,7 @@ export const createDynamicPaymentMiddleware = (
       network === "base-sepolia" ? "eip155:84532" : "eip155:8453";
     const isMainnet = network === "base";
 
-    const server = getOrCreateServer(
+    const server = createServer(
       isMainnet,
       c.env.CDP_API_KEY_ID,
       c.env.CDP_API_KEY_SECRET,

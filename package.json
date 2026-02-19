@@ -9,7 +9,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:sepolia": "vitest test/e2e-upload-sepolia.test.ts",
-    "test:mainnet": "TEST_API_URL=https://402-server.pinata-marketing-enterprise.workers.dev vitest test/e2e-upload-mainnet.test.ts"
+    "test:mainnet": "TEST_API_URL=https://402-server.pinata-marketing-enterprise.workers.dev vitest test/e2e-upload-mainnet.test.ts",
+    "test:retrieve": "TEST_API_URL=https://402-server.pinata-marketing-enterprise.workers.dev vitest test/e2e-retrieve-mainnet.test.ts"
   },
   "dependencies": {
     "@coinbase/cdp-sdk": "^1.44.1",

@@ -9,11 +9,8 @@ CDP_API_KEY_SECRET=your_cdp_api_key_secret_here
 
 # Pinata credentials (get from Pinata dashboard)
 PINATA_JWT=your_pinata_jwt_here
+PINATA_GATEWAY_URL=your_gateway.mypinata.cloud
 PINATA_GATEWAY_KEY=your_pinata_gateway_key_here
 
 # Test wallet configuration (only needed for running e2e tests)
 TEST_PRIVATE_KEY=0x0000000000000000000000000000000000000000000000000000000000000000
-TEST_RECEIVING_WALLET=0x0000000000000000000000000000000000000000
-
-# Note: Non-sensitive configuration like NETWORK and PINATA_GATEWAY_URL
-# are in wrangler.jsonc and can be committed to git
