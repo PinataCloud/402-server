@@ -192,23 +192,19 @@ describe("End-to-End File Upload Tests (Base Mainnet)", () => {
       { size: 5 * 1024 * 1024, label: "5MB" },
     ];
 
-    console.log("\n=== Price Testing ===");
+    console.log("\n=== Price Scaling ===");
 
     for (const { size, label } of fileSizes) {
-      // Get 402 response to see price
       const response = await fetch(
         `${TEST_API_URL}/v1/pin/public?fileSize=${size}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         },
       );
 
       expect(response.status).toBe(402);
 
-      // In x402 v2, payment info is in the PAYMENT-REQUIRED header (base64 encoded JSON)
       const paymentHeader = response.headers.get("PAYMENT-REQUIRED");
       expect(paymentHeader).toBeTruthy();
 
@@ -216,17 +212,97 @@ describe("End-to-End File Upload Tests (Base Mainnet)", () => {
         atob(paymentHeader!),
       ) as PaymentRequiredResponse;
 
-      console.log(`${label} (${size} bytes):`, paymentInfo.accepts[0]);
-
-      // Verify the pricing logic: 0.1 per GB * 12 months, minimum 0.001
-      const expectedPrice = Math.max(
+      const actualMicroUSDC = parseInt(paymentInfo.accepts[0].amount);
+      // Server uses toFixed(4) which rounds to 4 decimal places of dollars
+      const rawPrice = Math.max(
         0.001,
         (size / (1024 * 1024 * 1024)) * 0.1 * 12,
       );
-      console.log(`Expected price: $${expectedPrice.toFixed(4)}`);
-      console.log(
-        `Actual price: $${(parseInt(paymentInfo.accepts[0].amount) / 1000000).toFixed(4)}`,
+      const expectedMicroUSDC = Math.round(
+        parseFloat(rawPrice.toFixed(4)) * 1000000,
       );
+
+      console.log(
+        `${label}: expected ${expectedMicroUSDC} microUSDC, got ${actualMicroUSDC} microUSDC`,
+      );
+      expect(actualMicroUSDC).toBe(expectedMicroUSDC);
     }
   });
+
+  it.each([
+    { size: 1024, label: "1KB" },
+    { size: 100 * 1024, label: "100KB" },
+    { size: 1024 * 1024, label: "1MB" },
+  ])(
+    "should upload and retrieve $label file with correct payment",
+    async ({ size, label }) => {
+      // Generate test content at the specified size
+      const content = "x".repeat(size);
+      const testFile = new File(
+        [content],
+        `size-test-${label}-${Date.now()}.txt`,
+        { type: "text/plain" },
+      );
+
+      // Step 1: Check the 402 price before paying
+      const priceCheck = await fetch(
+        `${TEST_API_URL}/v1/pin/private?fileSize=${testFile.size}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+      expect(priceCheck.status).toBe(402);
+      const challengeHeader = priceCheck.headers.get("PAYMENT-REQUIRED");
+      const challenge = JSON.parse(
+        atob(challengeHeader!),
+      ) as PaymentRequiredResponse;
+      const chargedMicroUSDC = parseInt(challenge.accepts[0].amount);
+      console.log(`${label} upload price: ${chargedMicroUSDC} microUSDC`);
+
+      // Step 2: Pay and get signed URL
+      const signedUrlResponse = await fetchWithPayment(
+        `${TEST_API_URL}/v1/pin/private?fileSize=${testFile.size}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+      expect(signedUrlResponse.status).toBe(200);
+      const { url: signedUrl } =
+        (await signedUrlResponse.json()) as SignedUrlResponse;
+
+      // Step 3: Upload
+      const formData = new FormData();
+      formData.append("file", testFile);
+      const uploadResponse = await fetch(signedUrl, {
+        method: "POST",
+        body: formData,
+      });
+      expect(uploadResponse.status).toBe(200);
+      const uploadResult =
+        (await uploadResponse.json()) as PinataUploadResponse;
+      const cid = uploadResult.data.cid;
+      console.log(`${label} uploaded: CID ${cid}`);
+
+      // Step 4: Pay to retrieve
+      const retrieveResponse = await fetchWithPayment(
+        `${TEST_API_URL}/v1/retrieve/private/${cid}`,
+        { method: "GET" },
+      );
+      expect(retrieveResponse.status).toBe(200);
+      const { url: accessUrl } =
+        (await retrieveResponse.json()) as PrivateRetrieveResponse;
+
+      // Step 5: Verify content
+      const fileResponse = await fetch(accessUrl);
+      expect(fileResponse.status).toBe(200);
+      const retrieved = await fileResponse.text();
+      expect(retrieved.length).toBe(size);
+      expect(retrieved).toBe(content);
+
+      console.log(`${label}: upload + retrieve verified`);
+    },
+    60000,
+  );
 });
