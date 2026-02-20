@@ -39,7 +39,13 @@ app.get("/private/:cid", async (c) => {
     return c.json({ url });
   } catch (error) {
     console.error("Error creating access link:", error);
-    return c.json({ message: "Server error" }, 500);
+    return c.json(
+      {
+        message: "Server error",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      500,
+    );
   }
 });
 
