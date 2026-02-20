@@ -1,4 +1,4 @@
-import type { createFacilitatorConfig } from "@coinbase/x402";
+import type { Context } from "hono";
 
 export type Bindings = {
   PINATA_JWT: string;
@@ -11,26 +11,18 @@ export type Bindings = {
 
 export type NetworkType = "base" | "base-sepolia";
 
-export interface RouteConfig {
-  price: string;
-  network: string;
-  config: {
-    discoverable: boolean;
-    description: string;
-    inputSchema?: {
-      queryParams?: Record<string, any>;
-      bodyParams?: Record<string, any>;
-      pathParams?: Record<string, any>;
-    };
-    outputSchema?: {
-      type: string;
-      properties?: Record<string, any>;
-    };
-  };
+/**
+ * Extract the payer's wallet address from the x402 payment header.
+ * Works with both v2 (PAYMENT-SIGNATURE) and v1 (X-PAYMENT) headers.
+ * The payload contains: { payload: { authorization: { from: "0x..." } } }
+ */
+export function getPayerAddress(c: Context): string | null {
+  const header = c.req.header("payment-signature") || c.req.header("x-payment");
+  if (!header) return null;
+  try {
+    const parsed = JSON.parse(atob(header));
+    return parsed?.payload?.authorization?.from ?? null;
+  } catch {
+    return null;
+  }
 }
-
-export interface PaymentConfig {
-  [route: string]: RouteConfig;
-}
-
-export type FacilitatorConfig = ReturnType<typeof createFacilitatorConfig>;

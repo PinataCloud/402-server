@@ -4,40 +4,28 @@
   "main": "src/index.ts",
   "compatibility_date": "2025-05-08",
   "compatibility_flags": ["nodejs_compat"],
-  "account_id": "36817f924b5f72114fc8df14298f453a",
-  "vars": {
-    "NETWORK": "base",
-    "CDP_API_KEY_ID": "4fac28f4-8546-4938-8f07-3f0eb1abde94",
-    "PINATA_GATEWAY_URL": "pink-tremendous-badger-644.mypinata.cloud"
-  },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
-  //   }
-  // ],
-  // "ai": {
-  //   "binding": "AI"
-  // },
   "observability": {
     "logs": {
-      "enabled": false,
+      "enabled": true,
       "head_sampling_rate": 1,
       "invocation_logs": true,
-      "persist": true
-    }
-  }
+      "persist": true,
+    },
+  },
+  "env": {
+    "dev": {
+      "name": "402-server",
+      "account_id": "178d3fda8eb7eb5be4c0d076ce2ba7d2",
+      "vars": {
+        "NETWORK": "base",
+      },
+    },
+    "prod": {
+      "name": "402-server",
+      "account_id": "36817f924b5f72114fc8df14298f453a",
+      "vars": {
+        "NETWORK": "base",
+      },
+    },
+  },
 }

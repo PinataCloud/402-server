@@ -1,27 +1,20 @@
 import { Hono } from "hono";
 import { PinataSDK } from "pinata";
-import { cors } from "hono/cors";
-import type { Bindings } from "../utils/types";
-import type { PaymentPayload } from "x402/types";
+import { getPayerAddress, type Bindings } from "../utils/types";
 
 const app = new Hono<{ Bindings: Bindings }>();
-app.use(cors());
-
-app.get("/test", async (c) => {
-  return c.text("Working!");
-});
 
 app.get("/private/:cid", async (c) => {
   try {
     const cid = c.req.param("cid");
 
-    const header = c.req.header("X-PAYMENT");
-    const headerParsed = header
-      ? (JSON.parse(atob(header)) as PaymentPayload)
-      : null;
-
     if (!cid) {
       return c.json({ message: "CID is required" }, 400);
+    }
+
+    const payerAddress = getPayerAddress(c);
+    if (!payerAddress) {
+      return c.json({ message: "Payment required" }, 402);
     }
 
     const pinata = new PinataSDK({
@@ -29,10 +22,10 @@ app.get("/private/:cid", async (c) => {
       pinataGateway: c.env.PINATA_GATEWAY_URL,
     });
 
-    //  Make sure the requestor is allowed to access
+    // Verify the payer owns this file (uploaded with their address as keyvalue)
     const files = await pinata.files.private
       .list()
-      .keyvalues({ account: headerParsed?.payload.authorization.from || "" });
+      .keyvalues({ account: payerAddress });
 
     if (!files.files || !files.files.find((f) => f.cid === cid)) {
       return c.json({ message: "Unauthorized" }, 401);
@@ -43,9 +36,9 @@ app.get("/private/:cid", async (c) => {
       expires: 3000,
     });
 
-    return c.json({ url: url });
+    return c.json({ url });
   } catch (error) {
-    console.log(error);
+    console.error("Error creating access link:", error);
     return c.json({ message: "Server error" }, 500);
   }
 });
