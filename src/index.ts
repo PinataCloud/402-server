@@ -8,7 +8,13 @@ import { createDynamicPaymentMiddleware } from "./utils/middleware";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.use(cors());
+// Expose x402 headers so browser clients can read the payment challenge/receipt
+app.use(
+  cors({
+    origin: "*",
+    exposeHeaders: ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE", "X-PAYMENT-RESPONSE"],
+  }),
+);
 
 app.use((c, next) => {
   const network = (c.env.NETWORK || "base") as "base" | "base-sepolia";
